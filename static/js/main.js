@@ -12,6 +12,11 @@ function initModals() {
         const modal = document.getElementById(modalId);
         if (!modal) return;
 
+        // If opening video modal, mount player or empty state
+        if (modalId === 'videoModal') {
+            setupVideoPlayer(modal);
+        }
+
         // If another modal is currently active, close it immediately
         if (activeModal && activeModal !== modal) {
             closeModal(activeModal, false);
@@ -38,6 +43,11 @@ function initModals() {
         const modal = modalToClose || activeModal;
         if (!modal) return;
 
+        // If closing video modal, completely tear down iframe so playback stops immediately
+        if (modal.id === 'videoModal') {
+            teardownVideoPlayer(modal);
+        }
+
         modal.classList.remove('is-open');
         document.body.classList.remove('modal-open');
 
@@ -57,6 +67,66 @@ function initModals() {
         } else {
             finishClosing();
         }
+    }
+
+    function formatYouTubeEmbedUrl(url) {
+        if (!url) return '';
+        const trimmed = url.trim();
+        if (!trimmed) return '';
+
+        // If already an embed URL, append autoplay if not present
+        if (trimmed.includes('youtube.com/embed/')) {
+            const separator = trimmed.includes('?') ? '&' : '?';
+            return trimmed.includes('autoplay=') ? trimmed : `${trimmed}${separator}autoplay=1`;
+        }
+
+        // Extract YouTube ID from standard watch URL or youtu.be short URL
+        const regExp = /(?:youtube\.com\/(?:watch\?.*v=|embed\/|v\/)|youtu\.be\/)([\w-]{11})/;
+        const match = trimmed.match(regExp);
+
+        if (match && match[1]) {
+            const videoId = match[1];
+            return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+        }
+
+        // Return trimmed URL if it's already a direct source URL
+        return trimmed;
+    }
+
+    function setupVideoPlayer(modal) {
+        const container = modal.querySelector('#videoPlayerContainer');
+        if (!container) return;
+
+        const rawUrl = modal.dataset.videoUrl || '';
+        const embedUrl = formatYouTubeEmbedUrl(rawUrl);
+
+        if (embedUrl) {
+            container.innerHTML = `<iframe class="video-iframe" src="${embedUrl}" title="Spendly Demo Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+        } else {
+            container.innerHTML = `
+                <div class="video-empty-state">
+                    <div class="video-empty-icon">▶</div>
+                    <h3>Demo Video Coming Soon</h3>
+                    <p>A video walkthrough of Spendly will be available here soon.</p>
+                </div>
+            `;
+        }
+    }
+
+    function teardownVideoPlayer(modal) {
+        const container = modal.querySelector('#videoPlayerContainer');
+        if (container) {
+            container.innerHTML = '';
+        }
+    }
+
+    // Modal Trigger Buttons in Hero
+    const videoBtn = document.getElementById('openVideoBtn');
+    if (videoBtn) {
+        videoBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal('videoModal', videoBtn);
+        });
     }
 
     // Modal Trigger Buttons in Footer

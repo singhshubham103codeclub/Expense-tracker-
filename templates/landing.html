@@ -1,4 +1,10 @@
-/{% extends "base.html" %}
+{% extends "base.html" %}
+
+{# ================================================================= #}
+{# YOUTUBE VIDEO URL PLACEHOLDER                                     #}
+{# Set your YouTube video or embed link here (e.g., https://www.youtube.com/watch?v=XXXXXX) #}
+{% set YOUTUBE_VIDEO_URL = "" %}
+{# ================================================================= #}
 
 {% block title %}Spendly — Track Every Rupee{% endblock %}
 
@@ -18,7 +24,7 @@
         </p>
         <div class="hero-actions">
             <a href="{{ url_for('register') }}" class="btn-hero-primary">Create free account</a>
-            <a href="#features" class="btn-hero-secondary">See how it works</a>
+            <button type="button" class="btn-hero-secondary" id="openVideoBtn" aria-haspopup="dialog" aria-controls="videoModal">See how it works</button>
         </div>
     </div>
     <div class="hero-visual">
@@ -96,5 +102,20 @@
         <a href="{{ url_for('register') }}" class="btn-primary">Create free account</a>
     </div>
 </section>
+
+<!-- YouTube Video Modal -->
+<div id="videoModal" class="modal-overlay video-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="videoModalTitle" data-video-url="{{ YOUTUBE_VIDEO_URL }}" hidden>
+    <div class="modal-dialog video-modal-dialog">
+        <div class="video-modal-header">
+            <h2 id="videoModalTitle" class="video-modal-title">Spendly Walkthrough</h2>
+            <button type="button" class="modal-close-btn video-modal-close" data-close-modal aria-label="Close video player">&times;</button>
+        </div>
+        <div class="video-modal-body">
+            <div class="video-player-container" id="videoPlayerContainer">
+                <!-- Video iframe or empty state dynamically mounted by JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}

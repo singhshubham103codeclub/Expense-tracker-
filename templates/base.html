@@ -34,8 +34,134 @@
             <span class="brand-icon">◈</span>
             <span class="footer-name">Spendly</span>
             <p class="footer-copy">Track every rupee. Own your finances.</p>
+            <div class="footer-links">
+                <button type="button" class="footer-link" id="openTermsBtn" aria-haspopup="dialog" aria-controls="termsModal">Terms &amp; Conditions</button>
+                <span class="footer-separator" aria-hidden="true">•</span>
+                <button type="button" class="footer-link" id="openPrivacyBtn" aria-haspopup="dialog" aria-controls="privacyModal">Privacy Policy</button>
+            </div>
         </div>
     </footer>
+
+    <!-- Terms & Conditions Modal -->
+    <div id="termsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="termsTitle" hidden>
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div>
+                    <h2 id="termsTitle" class="modal-title">Terms &amp; Conditions</h2>
+                    <span class="modal-subtitle">Effective Date: March 2026</span>
+                </div>
+                <button type="button" class="modal-close-btn" data-close-modal aria-label="Close Terms &amp; Conditions">&times;</button>
+            </div>
+            <div class="modal-body">
+                <section class="modal-section">
+                    <h3>1. Acceptance of Terms</h3>
+                    <p>By accessing, browsing, or using the Spendly application, you acknowledge that you have read, understood, and agree to be bound by these Terms &amp; Conditions. If you do not agree to these terms, please discontinue using the service.</p>
+                </section>
+                <section class="modal-section">
+                    <h3>2. Purpose of the Application</h3>
+                    <p>Spendly is designed as a personal expense tracking tool to help users record transactions, categorize expenditures, and gain insight into their spending patterns for personal organizational purposes.</p>
+                </section>
+                <section class="modal-section">
+                    <h3>3. User Responsibility for Financial Data</h3>
+                    <p>You are solely responsible for all financial entries, transaction records, categories, and descriptions you add to Spendly. You determine what information to log and maintain within your account.</p>
+                </section>
+                <section class="modal-section">
+                    <h3>4. Accuracy of User-Provided Information</h3>
+                    <p>The accuracy and reliability of all calculations, totals, and budget overviews depend entirely upon the data you input. Spendly does not verify the authenticity of your transaction records, and you are responsible for maintaining accurate figures.</p>
+                </section>
+                <section class="modal-section">
+                    <h3>5. No Financial or Investment Advice</h3>
+                    <p>Spendly is strictly a personal bookkeeping and informational tool. Nothing provided within the application, including summaries and breakdowns, constitutes certified financial, legal, tax, or investment advice. Consult a certified financial planner or tax advisor for professional guidance.</p>
+                </section>
+                <section class="modal-section">
+                    <h3>6. Account &amp; Credential Security</h3>
+                    <p>When you register for an account, you are responsible for maintaining the confidentiality of your login credentials. You are responsible for all activities occurring under your account and agree to use reasonable care to prevent unauthorized access.</p>
+                </section>
+                <section class="modal-section">
+                    <h3>7. Service Availability</h3>
+                    <p>Spendly is provided on an &ldquo;as is&rdquo; and &ldquo;as available&rdquo; basis without warranties of any kind. While we aim for reliable service, we do not guarantee uninterrupted uptime, immediate error resolution, or that features will always remain error-free.</p>
+                </section>
+                <section class="modal-section">
+                    <h3>8. Limitation of Liability</h3>
+                    <p>To the maximum extent permitted by applicable law, Spendly, its authors, and contributors shall not be liable for any direct, indirect, incidental, or consequential damages resulting from your use of, or inability to use, the application or any data recorded within it.</p>
+                </section>
+                <section class="modal-section">
+                    <h3>9. Changes to Terms</h3>
+                    <p>We reserve the right to revise or update these Terms &amp; Conditions periodically. Any updates will be reflected in this dialog. Your continued use of Spendly after updates signifies acceptance of the amended terms.</p>
+                </section>
+                <section class="modal-section">
+                    <h3>10. Contact &amp; Support</h3>
+                    <p>If you have any questions or feedback regarding these terms, please contact the Spendly support or project administration team.</p>
+                </section>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" data-close-modal>Understood</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Policy Modal -->
+    <div id="privacyModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="privacyTitle" hidden>
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div>
+                    <h2 id="privacyTitle" class="modal-title">Privacy Policy</h2>
+                    <span class="modal-subtitle">Effective Date: March 2026</span>
+                </div>
+                <button type="button" class="modal-close-btn" data-close-modal aria-label="Close Privacy Policy">&times;</button>
+            </div>
+            <div class="modal-body">
+                <section class="modal-section">
+                    <h3>1. Information We Collect</h3>
+                    <p>Spendly collects only the information necessary to provide expense-tracking functionality:</p>
+                    <ul>
+                        <li><strong>Account Details:</strong> Name, email address, and authentication credentials entered during registration.</li>
+                        <li><strong>Expense Records:</strong> Transaction amounts, expense categories (e.g., Bills, Food, Health, Transport), dates, and descriptions you choose to enter.</li>
+                    </ul>
+                </section>
+                <section class="modal-section">
+                    <h3>2. How We Use Information</h3>
+                    <p>Collected information is used exclusively to operate your expense tracker:</p>
+                    <ul>
+                        <li>Calculating category totals and spending breakdowns.</li>
+                        <li>Managing user authentication and active sign-in sessions.</li>
+                        <li>Displaying your historical transactions and dashboard summaries.</li>
+                    </ul>
+                </section>
+                <section class="modal-section">
+                    <h3>3. Data Storage &amp; Security</h3>
+                    <p>Your user profile and transaction entries are stored in the application database. We implement standard development practices to safeguard your data. However, no digital transmission or database storage method is completely infallible, and absolute security cannot be guaranteed.</p>
+                </section>
+                <section class="modal-section">
+                    <h3>4. Third-Party Sharing</h3>
+                    <p>Spendly does not sell, rent, monetize, or share your personal data or financial logs with third parties, marketing networks, or external analytics brokers.</p>
+                </section>
+                <section class="modal-section">
+                    <h3>5. Cookies &amp; Local Storage</h3>
+                    <p>Spendly utilizes standard HTTP session cookies strictly for authentication and maintaining your signed-in state. The application does not use tracking cookies, advertising beacons, or third-party behavioral profiling scripts.</p>
+                </section>
+                <section class="modal-section">
+                    <h3>6. User Rights &amp; Control</h3>
+                    <p>You maintain control over your personal records. Within the application, you can view, edit, or delete individual expense transactions as needed.</p>
+                </section>
+                <section class="modal-section">
+                    <h3>7. Data Retention &amp; Deletion</h3>
+                    <p>Your financial records and account information are retained while your account remains active or until you delete specific expense records. Deleted transactions are removed from your active transaction history.</p>
+                </section>
+                <section class="modal-section">
+                    <h3>8. Changes to Privacy Policy</h3>
+                    <p>We may update this Privacy Policy from time to time. Updates will be posted within this dialog alongside the revised effective date.</p>
+                </section>
+                <section class="modal-section">
+                    <h3>9. Contact &amp; Inquiries</h3>
+                    <p>If you have any questions about this Privacy Policy or how your data is handled, please reach out to the Spendly maintainer or application administrator.</p>
+                </section>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" data-close-modal>Close</button>
+            </div>
+        </div>
+    </div>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block scripts %}{% endblock %}

@@ -1,2 +1,2 @@
 spendly.
-expense tracker
+ daily expense tracker

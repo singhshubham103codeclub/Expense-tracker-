@@ -1,8 +1,9 @@
+import functools
 import os
 import re
 import sqlite3
-from flask import Flask, flash, redirect, render_template, request, url_for
-from werkzeug.security import generate_password_hash
+from flask import Flask, flash, g, redirect, render_template, request, session, url_for
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from database.db import close_db, get_db, init_db
 
@@ -12,6 +13,29 @@ app.teardown_appcontext(close_db)
 
 with app.app_context():
     init_db()
+
+
+@app.before_request
+def load_logged_in_user():
+    user_id = session.get("user_id")
+    if user_id is None:
+        g.user = None
+    else:
+        g.user = get_db().execute(
+            "SELECT id, name, email FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+        if g.user is None:
+            session.clear()
+
+
+def login_required(view):
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if g.user is None:
+            flash("Please sign in to access this page.", "error")
+            return redirect(url_for("login", next=request.path))
+        return view(**kwargs)
+    return wrapped_view
 
 
 # ------------------------------------------------------------------ #
@@ -25,6 +49,9 @@ def landing():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    if g.user:
+        return redirect(url_for("landing"))
+
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip().lower()
@@ -85,8 +112,43 @@ def register():
     return render_template("register.html")
 
 
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
+    if g.user:
+        return redirect(url_for("landing"))
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+
+        if not email or not password:
+            return render_template(
+                "login.html",
+                error="Please provide both email and password.",
+                email=email,
+            )
+
+        db = get_db()
+        user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+
+        if user is None or not check_password_hash(user["password_hash"], password):
+            return render_template(
+                "login.html",
+                error="Invalid email or password.",
+                email=email,
+            )
+
+        session.clear()
+        session["user_id"] = user["id"]
+        session["user_name"] = user["name"]
+        flash(f"Welcome back, {user['name']}!", "success")
+
+        next_url = request.args.get("next")
+        if next_url and next_url.startswith("/") and not next_url.startswith("//"):
+            return redirect(next_url)
+
+        return redirect(url_for("landing"))
+
     return render_template("login.html")
 
 
@@ -96,10 +158,13 @@ def login():
 
 @app.route("/logout")
 def logout():
-    return "Logout — coming in Step 3"
+    session.clear()
+    flash("You have been signed out.", "success")
+    return redirect(url_for("landing"))
 
 
 @app.route("/profile")
+@login_required
 def profile():
     return "Profile page — coming in Step 4"
 

@@ -1,6 +1,7 @@
 import os
 import tempfile
 import pytest
+from flask import g, session
 from werkzeug.security import check_password_hash
 
 from app import app
@@ -157,3 +158,267 @@ def test_register_invalid_email(client):
     html = response.data.decode("utf-8")
     assert "Please provide a valid email address." in html
     assert 'value="Jane Doe"' in html
+
+
+# ------------------------------------------------------------------ #
+# Login Tests                                                        #
+# ------------------------------------------------------------------ #
+
+def test_login_get_renders_form(client):
+    response = client.get("/login")
+    assert response.status_code == 200
+    html = response.data.decode("utf-8")
+    assert "Welcome back" in html
+    assert 'name="email"' in html
+    assert 'name="password"' in html
+    assert "Sign in" in html
+
+
+def test_login_empty_fields(client):
+    response = client.post("/login", data={"email": "", "password": ""})
+    assert response.status_code == 200
+    html = response.data.decode("utf-8")
+    assert "Please provide both email and password." in html
+
+
+def test_login_nonexistent_email(client):
+    response = client.post(
+        "/login",
+        data={"email": "nobody@example.com", "password": "password123"},
+    )
+    assert response.status_code == 200
+    html = response.data.decode("utf-8")
+    assert "Invalid email or password." in html
+    assert 'value="nobody@example.com"' in html
+
+
+def test_login_wrong_password(client):
+    # Register user first
+    client.post(
+        "/register",
+        data={
+            "name": "Jane Doe",
+            "email": "jane@example.com",
+            "password": "correctpassword123",
+        },
+    )
+
+    response = client.post(
+        "/login",
+        data={"email": "jane@example.com", "password": "wrongpassword"},
+    )
+    assert response.status_code == 200
+    html = response.data.decode("utf-8")
+    assert "Invalid email or password." in html
+    assert 'value="jane@example.com"' in html
+
+
+def test_login_success(client):
+    # Register user
+    client.post(
+        "/register",
+        data={
+            "name": "Jane Doe",
+            "email": "jane@example.com",
+            "password": "correctpassword123",
+        },
+    )
+
+    response = client.post(
+        "/login",
+        data={"email": "jane@example.com", "password": "correctpassword123"},
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    html = response.data.decode("utf-8")
+    assert "Welcome back, Jane Doe!" in html
+    with client.session_transaction() as sess:
+        assert sess.get("user_id") is not None
+        assert sess.get("user_name") == "Jane Doe"
+
+
+def test_login_case_insensitive_email(client):
+    # Register in lowercase
+    client.post(
+        "/register",
+        data={
+            "name": "Jane Doe",
+            "email": "jane@example.com",
+            "password": "correctpassword123",
+        },
+    )
+
+    # Login with uppercase email
+    response = client.post(
+        "/login",
+        data={"email": "JANE@EXAMPLE.COM", "password": "correctpassword123"},
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    with client.session_transaction() as sess:
+        assert sess.get("user_id") is not None
+
+
+def test_login_redirect_when_already_authenticated(client):
+    # Register and login
+    client.post(
+        "/register",
+        data={
+            "name": "Jane Doe",
+            "email": "jane@example.com",
+            "password": "correctpassword123",
+        },
+    )
+    client.post(
+        "/login",
+        data={"email": "jane@example.com", "password": "correctpassword123"},
+    )
+    # Attempt visiting login page while logged in
+    response = client.get("/login")
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/"
+
+
+def test_register_redirect_when_already_authenticated(client):
+    # Register and login
+    client.post(
+        "/register",
+        data={
+            "name": "Jane Doe",
+            "email": "jane@example.com",
+            "password": "correctpassword123",
+        },
+    )
+    client.post(
+        "/login",
+        data={"email": "jane@example.com", "password": "correctpassword123"},
+    )
+    # Attempt visiting register page while logged in
+    response = client.get("/register")
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/"
+
+
+def test_login_next_url_redirect(client):
+    client.post(
+        "/register",
+        data={
+            "name": "Jane Doe",
+            "email": "jane@example.com",
+            "password": "correctpassword123",
+        },
+    )
+    response = client.post(
+        "/login?next=/profile",
+        data={"email": "jane@example.com", "password": "correctpassword123"},
+    )
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/profile"
+
+
+def test_login_next_url_open_redirect_prevented(client):
+    client.post(
+        "/register",
+        data={
+            "name": "Jane Doe",
+            "email": "jane@example.com",
+            "password": "correctpassword123",
+        },
+    )
+    # Malicious next URL should fall back to landing
+    response = client.post(
+        "/login?next=https://evil.com",
+        data={"email": "jane@example.com", "password": "correctpassword123"},
+    )
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/"
+
+
+# ------------------------------------------------------------------ #
+# Logout Tests                                                       #
+# ------------------------------------------------------------------ #
+
+def test_logout(client):
+    client.post(
+        "/register",
+        data={
+            "name": "Jane Doe",
+            "email": "jane@example.com",
+            "password": "correctpassword123",
+        },
+    )
+    client.post(
+        "/login",
+        data={"email": "jane@example.com", "password": "correctpassword123"},
+    )
+    with client.session_transaction() as sess:
+        assert sess.get("user_id") is not None
+
+    response = client.get("/logout", follow_redirects=True)
+    assert response.status_code == 200
+    html = response.data.decode("utf-8")
+    assert "You have been signed out." in html
+    with client.session_transaction() as sess:
+        assert sess.get("user_id") is None
+
+
+# ------------------------------------------------------------------ #
+# Access Control (@login_required) Tests                             #
+# ------------------------------------------------------------------ #
+
+def test_login_required_unauthenticated(client):
+    response = client.get("/profile")
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
+    assert "next=/profile" in response.headers["Location"]
+
+
+def test_login_required_authenticated(client):
+    client.post(
+        "/register",
+        data={
+            "name": "Jane Doe",
+            "email": "jane@example.com",
+            "password": "correctpassword123",
+        },
+    )
+    client.post(
+        "/login",
+        data={"email": "jane@example.com", "password": "correctpassword123"},
+    )
+    response = client.get("/profile")
+    assert response.status_code == 200
+    assert "Profile page — coming in Step 4" in response.data.decode("utf-8")
+
+
+# ------------------------------------------------------------------ #
+# Navigation State Tests                                             #
+# ------------------------------------------------------------------ #
+
+def test_navbar_links_state(client):
+    # Unauthenticated state
+    response = client.get("/")
+    html = response.data.decode("utf-8")
+    assert "Sign in" in html
+    assert "Get started" in html
+    assert "Sign out" not in html
+
+    # Authenticate user
+    client.post(
+        "/register",
+        data={
+            "name": "Jane Doe",
+            "email": "jane@example.com",
+            "password": "correctpassword123",
+        },
+    )
+    client.post(
+        "/login",
+        data={"email": "jane@example.com", "password": "correctpassword123"},
+    )
+    response = client.get("/")
+    html = response.data.decode("utf-8")
+    assert "Sign out" in html
+    assert "Profile" in html
+    assert "Sign in" not in html
+

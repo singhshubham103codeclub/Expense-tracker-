@@ -119,6 +119,12 @@ a { color: inherit; text-decoration: none; }
 
 .main-content { min-height: calc(100vh - 60px - 100px); }
 
+.flash-container {
+    max-width: var(--max-width);
+    margin: 1.5rem auto 0;
+    padding: 0 1.5rem;
+}
+
 /* ------------------------------------------------------------------ */
 /* Hero                                                                */
 /* ------------------------------------------------------------------ */

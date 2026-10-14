@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}Sign in — Spendly{% endblock %}
+{% block flash_messages %}{% endblock %}
 
 {% block content %}
 
@@ -21,7 +22,7 @@
                 {% endif %}
             {% endwith %}
             {% if error %}
-            <div class="auth-error">{{ error }}</div>
+            <div class="auth-error" role="alert">{{ error }}</div>
             {% endif %}
 
             <form method="POST" action="/login">
@@ -29,6 +30,7 @@
                     <label for="email">Email address</label>
                     <input type="email" id="email" name="email"
                            class="form-input" placeholder="nitish@example.com"
+                           value="{{ email or '' }}"
                            required autofocus>
                 </div>
                 <div class="form-group">

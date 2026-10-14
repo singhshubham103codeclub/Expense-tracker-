@@ -17,6 +17,14 @@ Example:
 `/create-feature-spec Add monthly expense reports with category-wise charts and date filters.`
 
 If no feature idea is provided, ask the user what feature they want to build. If essential requirements are unclear, ask focused follow-up questions before finalizing the specification.
+folder structure:   
+expense-tracker/
+├── .agents/
+│        
+└── specs/
+    ├── monthly-expense-reports.md
+    ├── user-profile-editing.md
+    └── monthly-budget-alerts.md
 
 ## Workflow
 

@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Profile — Spendly{% endblock %}
+
+{% block content %}
+<section class="profile-section">
+    <div class="profile-container">
+
+        <!-- Profile Header Card -->
+        <header class="profile-header-card">
+            <div class="profile-avatar" aria-hidden="true">{{ initials }}</div>
+            <div class="profile-header-info">
+                <h1 class="profile-name">{{ user['name'] }}</h1>
+                <div class="profile-meta">
+                    <span class="profile-email">{{ user['email'] }}</span>
+                    <span class="profile-separator" aria-hidden="true">•</span>
+                    <span class="profile-badge">
+                        <span class="profile-badge-dot" aria-hidden="true"></span>
+                        Active Member
+                    </span>
+                    <span class="profile-separator" aria-hidden="true">•</span>
+                    <span class="profile-date">◈ Member since {{ member_since }}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Profile Grid -->
+        <div class="profile-grid">
+
+            <!-- Sidebar: Account Overview -->
+            <aside class="profile-sidebar" aria-label="Account Overview">
+                <div class="profile-card">
+                    <h2 class="profile-card-title">Account Overview</h2>
+                    <p class="profile-card-desc">Your Spendly account status and settings</p>
+
+                    <div class="profile-stat-box">
+                        <div class="profile-stat-label">Account Status</div>
+                        <div class="profile-stat-val">
+                            <span class="profile-badge-dot" aria-hidden="true"></span>
+                            Active
+                        </div>
+                    </div>
+
+                    <div class="profile-stat-box">
+                        <div class="profile-stat-label">Currency</div>
+                        <div class="profile-stat-val">Indian Rupee (₹)</div>
+                    </div>
+
+                    <div class="profile-stat-box">
+                        <div class="profile-stat-label">Tenure</div>
+                        <div class="profile-stat-val">{{ member_since }}</div>
+                    </div>
+
+                    <div class="profile-stat-box">
+                        <div class="profile-stat-label">Total Expenses</div>
+                        <div class="profile-stat-val">{{ total_expenses_count }} logged</div>
+                    </div>
+
+                    <div class="profile-sidebar-links">
+                        <a href="{{ url_for('landing') }}" class="profile-sidebar-link">
+                            <span class="brand-icon" aria-hidden="true">◈</span>
+                            Back to Home
+                        </a>
+                        <a href="{{ url_for('logout') }}" class="profile-sidebar-link profile-signout-link">
+                            Sign out
+                        </a>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content: Edit Details & Security -->
+            <div class="profile-main">
+
+                <!-- Recent Expenses Card -->
+                <div class="profile-card profile-expenses-card">
+                    <div class="profile-card-header">
+                        <div>
+                            <h2 class="profile-card-title">Recent Expenses</h2>
+                            <p class="profile-card-desc">Your latest transactions across categories</p>
+                        </div>
+                        {% if recent_expenses %}
+                        <span class="expenses-count-pill">{{ total_expenses_count }} total</span>
+                        {% endif %}
+                    </div>
+
+                    {% if recent_expenses %}
+                    <div class="profile-expenses-table-wrapper">
+                        <table class="profile-expenses-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Category</th>
+                                    <th scope="col">Description</th>
+                                    <th scope="col">Date</th>
+                                    <th scope="col" class="text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for expense in recent_expenses %}
+                                <tr>
+                                    <td>
+                                        <span class="badge-category badge-cat-{{ expense.category.lower() if expense.category else 'other' }}">
+                                            {{ expense.category }}
+                                        </span>
+                                    </td>
+                                    <td class="expense-desc">{{ expense.description or '—' }}</td>
+                                    <td class="expense-date">{{ expense.formatted_date }}</td>
+                                    <td class="expense-amount text-right">{{ expense.formatted_amount }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="expenses-empty-card">
+                        <div class="expenses-empty-icon" aria-hidden="true">◈</div>
+                        <h3 class="expenses-empty-title">No expenses logged yet</h3>
+                        <p class="expenses-empty-text">Your recent transactions will appear here once you start tracking your spending.</p>
+                        <a href="{{ url_for('add_expense') }}" class="btn-empty-cta">Log an expense</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Personal Information Card -->
+                <div class="profile-card">
+                    <h2 class="profile-card-title">Personal Information</h2>
+                    <p class="profile-card-desc">Update your display name and email address</p>
+
+                    <form method="POST" action="{{ url_for('profile') }}">
+                        <input type="hidden" name="action" value="update_profile">
+
+                        <div class="form-group">
+                            <label for="name">Full name</label>
+                            <input type="text" id="name" name="name"
+                                   class="form-input"
+                                   value="{{ user['name'] }}"
+                                   required minlength="2" maxlength="100">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email address</label>
+                            <input type="email" id="email" name="email"
+                                   class="form-input"
+                                   value="{{ user['email'] }}"
+                                   required maxlength="255">
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-profile-save">Save changes</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Security & Password Card -->
+                <div class="profile-card">
+                    <h2 class="profile-card-title">Security &amp; Password</h2>
+                    <p class="profile-card-desc">Ensure your account is protected with a secure password</p>
+
+                    <form method="POST" action="{{ url_for('profile') }}">
+                        <input type="hidden" name="action" value="change_password">
+
+                        <div class="form-group">
+                            <label for="current_password">Current password</label>
+                            <input type="password" id="current_password" name="current_password"
+                                   class="form-input" placeholder="Enter your current password"
+                                   required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="new_password">New password</label>
+                            <input type="password" id="new_password" name="new_password"
+                                   class="form-input" placeholder="Minimum 8 characters"
+                                   minlength="8" maxlength="128" required>
+                            <span class="form-help">Must be at least 8 characters long</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirm_password">Confirm new password</label>
+                            <input type="password" id="confirm_password" name="confirm_password"
+                                   class="form-input" placeholder="Re-enter your new password"
+                                   minlength="8" maxlength="128" required>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-profile-save">Update password</button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</section>
+{% endblock %}

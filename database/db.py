@@ -35,6 +35,20 @@ def init_db():
         );
 
         CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users (email);
+
+        CREATE TABLE IF NOT EXISTS expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            category TEXT NOT NULL,
+            amount REAL NOT NULL,
+            date DATE NOT NULL,
+            description TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_expenses_user_id ON expenses (user_id);
+        CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses (date);
     """)
     db.commit()
 

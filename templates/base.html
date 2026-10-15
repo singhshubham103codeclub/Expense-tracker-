@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Spendly{% endblock %}</title>
+    <base target="_self">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -20,11 +21,14 @@
             </a>
             <div class="nav-links">
                 {% if g.user %}
-                <a href="{{ url_for('profile') }}">Profile</a>
-                <a href="{{ url_for('logout') }}" class="nav-cta">Sign out</a>
+                <a href="{{ url_for('profile') }}" target="_self" class="nav-profile-link">
+                    <svg class="nav-profile-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    Profile
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-cta" target="_self">Sign out</a>
                 {% else %}
-                <a href="{{ url_for('login') }}">Sign in</a>
-                <a href="{{ url_for('register') }}" class="nav-cta">Get started</a>
+                <a href="{{ url_for('login') }}" target="_self">Sign in</a>
+                <a href="{{ url_for('register') }}" class="nav-cta" target="_self">Get started</a>
                 {% endif %}
             </div>
         </div>

@@ -388,7 +388,7 @@ def test_login_required_authenticated(client):
     )
     response = client.get("/profile")
     assert response.status_code == 200
-    assert "Profile page — coming in Step 4" in response.data.decode("utf-8")
+    assert "Profile" in response.data.decode("utf-8")
 
 
 # ------------------------------------------------------------------ #

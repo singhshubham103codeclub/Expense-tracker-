@@ -1,3 +1,4 @@
+from datetime import datetime
 import functools
 import os
 import re
@@ -22,7 +23,7 @@ def load_logged_in_user():
         g.user = None
     else:
         g.user = get_db().execute(
-            "SELECT id, name, email FROM users WHERE id = ?", (user_id,)
+            "SELECT id, name, email, created_at FROM users WHERE id = ?", (user_id,)
         ).fetchone()
         if g.user is None:
             session.clear()
@@ -163,10 +164,179 @@ def logout():
     return redirect(url_for("landing"))
 
 
-@app.route("/profile")
+def get_user_initials(name):
+    if not name:
+        return "?"
+    parts = name.strip().split()
+    if not parts:
+        return "?"
+    if len(parts) == 1:
+        return parts[0][:2].upper()
+    return (parts[0][0] + parts[-1][0]).upper()
+
+
+def format_member_since(created_at):
+    if not created_at:
+        return "Recently"
+    try:
+        if isinstance(created_at, datetime):
+            return created_at.strftime("%B %Y")
+        clean_str = str(created_at).split(".")[0]
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+            try:
+                dt = datetime.strptime(clean_str, fmt)
+                return dt.strftime("%B %Y")
+            except ValueError:
+                continue
+        return str(created_at)[:10]
+    except Exception:
+        return "Recently"
+
+
+@app.route("/profile", methods=["GET", "POST"])
 @login_required
 def profile():
-    return "Profile page — coming in Step 4"
+    db = get_db()
+
+    if request.method == "POST":
+        action = request.form.get("action", "")
+
+        # --- Handle Profile Info Update ---
+        if action == "update_profile":
+            name = request.form.get("name", "").strip()
+            email = request.form.get("email", "").strip().lower()
+
+            if not name or len(name) < 2 or len(name) > 100:
+                flash("Please provide your full name (2–100 characters).", "error")
+                return redirect(url_for("profile"))
+
+            email_pattern = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+            if not email or len(email) > 255 or not re.match(email_pattern, email):
+                flash("Please provide a valid email address.", "error")
+                return redirect(url_for("profile"))
+
+            # Check if email is already taken by another user
+            existing = db.execute(
+                "SELECT id FROM users WHERE email = ? AND id != ?", (email, g.user["id"])
+            ).fetchone()
+            if existing:
+                flash("An account with this email address already exists.", "error")
+                return redirect(url_for("profile"))
+
+            try:
+                db.execute(
+                    "UPDATE users SET name = ?, email = ? WHERE id = ?",
+                    (name, email, g.user["id"]),
+                )
+                db.commit()
+            except sqlite3.IntegrityError:
+                flash("An account with this email address already exists.", "error")
+                return redirect(url_for("profile"))
+
+            session["user_name"] = name
+            flash("Your profile details have been updated.", "success")
+            return redirect(url_for("profile"))
+
+        # --- Handle Password Change ---
+        elif action == "change_password":
+            current_password = request.form.get("current_password", "")
+            new_password = request.form.get("new_password", "")
+            confirm_password = request.form.get("confirm_password", "")
+
+            if not current_password or not new_password or not confirm_password:
+                flash("All password fields are required.", "error")
+                return redirect(url_for("profile"))
+
+            user_auth = db.execute(
+                "SELECT password_hash FROM users WHERE id = ?", (g.user["id"],)
+            ).fetchone()
+
+            if not user_auth or not check_password_hash(user_auth["password_hash"], current_password):
+                flash("Current password is incorrect.", "error")
+                return redirect(url_for("profile"))
+
+            if len(new_password) < 8 or len(new_password) > 128:
+                flash("New password must be at least 8 characters long.", "error")
+                return redirect(url_for("profile"))
+
+            if new_password != confirm_password:
+                flash("New passwords do not match.", "error")
+                return redirect(url_for("profile"))
+
+            if check_password_hash(user_auth["password_hash"], new_password):
+                flash("New password must be different from your current password.", "error")
+                return redirect(url_for("profile"))
+
+            db.execute(
+                "UPDATE users SET password_hash = ? WHERE id = ?",
+                (generate_password_hash(new_password), g.user["id"]),
+            )
+            db.commit()
+            flash("Password changed successfully.", "success")
+            return redirect(url_for("profile"))
+
+    # Fetch latest user data for GET or fall-through
+    user = db.execute(
+        "SELECT id, name, email, created_at FROM users WHERE id = ?", (g.user["id"],)
+    ).fetchone()
+
+    initials = get_user_initials(user["name"] if user else "")
+    member_since = format_member_since(user["created_at"] if user else None)
+
+    # Fetch recent 5 expenses for the current user
+    expenses_rows = db.execute(
+        """
+        SELECT id, category, description, date, amount
+        FROM expenses
+        WHERE user_id = ?
+        ORDER BY date DESC, id DESC
+        LIMIT 5
+        """,
+        (g.user["id"],),
+    ).fetchall()
+
+    recent_expenses = []
+    for exp in expenses_rows:
+        raw_date = exp["date"]
+        formatted_date = str(raw_date)
+        if raw_date:
+            try:
+                if isinstance(raw_date, datetime):
+                    formatted_date = raw_date.strftime("%d %b %Y")
+                else:
+                    d_obj = datetime.strptime(str(raw_date).split()[0], "%Y-%m-%d")
+                    formatted_date = d_obj.strftime("%d %b %Y")
+            except Exception:
+                formatted_date = str(raw_date)
+
+        amount_val = float(exp["amount"]) if exp["amount"] is not None else 0.0
+        formatted_amount = f"₹{amount_val:,.2f}"
+
+        recent_expenses.append({
+            "id": exp["id"],
+            "category": exp["category"],
+            "description": exp["description"],
+            "formatted_date": formatted_date,
+            "formatted_amount": formatted_amount,
+            "amount": amount_val,
+            "date": exp["date"],
+        })
+
+    # Count total transactions for user
+    total_count_row = db.execute(
+        "SELECT COUNT(*) as count FROM expenses WHERE user_id = ?",
+        (g.user["id"],),
+    ).fetchone()
+    total_expenses_count = total_count_row["count"] if total_count_row else 0
+
+    return render_template(
+        "profile.html",
+        user=user,
+        initials=initials,
+        member_since=member_since,
+        recent_expenses=recent_expenses,
+        total_expenses_count=total_expenses_count,
+    )
 
 
 @app.route("/expenses/add")
